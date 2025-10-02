@@ -1,83 +1,44 @@
-# ==========================================
-# Sistema de cálculo de costos Julia's Cake
-# Con gastos variables y precio sugerido
-# ==========================================
+import streamlit as st
 
-# Paso 1: Datos generales
-nombre_torta = input("Ingrese el nombre de la torta: ")
+st.title("🍰 JuliaCake Calculadora")
 
-# Tasas de cambio
-dolar_bcv = float(input("Ingrese el precio actual del dólar (BCV): "))
-dolar_calle = float(input("Ingrese el precio actual del dólar (calle): "))
+# --- Datos iniciales ---
+nombre_torta = st.text_input("Nombre de la torta")
+dolar_bcv = st.number_input("Precio del dólar BCV", min_value=0.0, step=0.01)
+dolar_calle = st.number_input("Precio del dólar Calle", min_value=0.0, step=0.01)
 
-# Lista de ingredientes (excepto huevos que es especial)
 ingredientes = ["Harina", "Azúcar", "Leche en polvo", "Mantequilla", "Cacao"]
+datos = {}
 
-# Diccionarios para almacenar datos
-precios = {}
-cantidades_g = {}
-costos_usd = {}
-
-print("\n--- INGRESO DE DATOS DE INGREDIENTES ---")
-print("Para cada ingrediente indique el precio en USD por kilo y luego los gramos utilizados.\n")
-
-# Paso 2: Recolección de datos con bucle
+st.header("🧾 Ingredientes")
 for ing in ingredientes:
-    precio = float(input(f"Precio de {ing} (USD/Kg): "))
-    gramos = float(input(f"Cantidad de {ing} utilizada (gramos): "))
-    
-    precios[ing] = precio
-    cantidades_g[ing] = gramos
-    
-    # Calcular costo en USD
-    costo = (gramos / 1000) * precio
-    costos_usd[ing] = costo
-    print(f"--> Costo de {ing}: ${costo:.2f}\n")
+    precio = st.number_input(f"Precio por kilo de {ing} ($)", min_value=0.0, step=0.01, key=f"{ing}_precio")
+    gramos = st.number_input(f"Gramos usados de {ing}", min_value=0.0, step=1.0, key=f"{ing}_gramos")
+    datos[ing] = (precio, gramos)
 
-# Paso 3: Huevos (manejo especial)
-print("\n--- DATOS DE HUEVOS ---")
-precio_carton = float(input("Precio del cartón de huevos (30 unidades) en USD: "))
-cantidad_huevos = int(input("Cantidad de huevos utilizados: "))
+# Huevo
+st.header("🥚 Huevo")
+carton_huevos = st.number_input("Precio del cartón de 30 huevos ($)", min_value=0.0, step=0.01)
+unidades_huevo = st.number_input("Unidades de huevo usadas", min_value=0, step=1)
 
-precio_unitario_huevo = precio_carton / 30
-costo_huevos = cantidad_huevos * precio_unitario_huevo
-costos_usd["Huevos"] = costo_huevos
+# --- Cálculo ---
+if st.button("Calcular costos"):
+    costo_total = 0
+    for ing, (precio_kilo, gramos) in datos.items():
+        costo_total += (precio_kilo / 1000) * gramos
 
-print(f"--> Costo de huevos: ${costo_huevos:.2f}")
+    # huevo
+    if carton_huevos > 0:
+        costo_huevo_unitario = carton_huevos / 30
+        costo_total += costo_huevo_unitario * unidades_huevo
 
-# Paso 4: Gastos variables
-gastos_variables = 1.5
-print(f"\nSe agregan ${gastos_variables:.2f} de gastos variables (bicarbonato, vainilla, cartón, velas, etc.)")
-costos_usd["Gastos Variables"] = gastos_variables
+    # gastos adicionales
+    costo_total += 1.5
 
-# Paso 5: Cálculo total con gastos
-costo_total_usd = sum(costos_usd.values())
+    precio_sugerido = costo_total * 2
 
-# Precio sugerido de venta (doble del costo)
-precio_sugerido_usd = costo_total_usd * 2
+    st.success(f"**Costo total en $:** ${costo_total:.2f}")
+    st.info(f"💲 Precio sugerido de venta: ${precio_sugerido:.2f}")
+    st.write(f"💵 En Bs (BCV): {costo_total * dolar_bcv:.2f}")
+    st.write(f"💵 En Bs (Calle): {costo_total * dolar_calle:.2f}")
 
-# Conversión a bolívares
-costo_total_bcv = costo_total_usd * dolar_bcv
-costo_total_calle = costo_total_usd * dolar_calle
-
-precio_sugerido_bcv = precio_sugerido_usd * dolar_bcv
-precio_sugerido_calle = precio_sugerido_usd * dolar_calle
-
-# Paso 6: Resultados finales
-print("\n==========================================")
-print(f"     COSTO DE FABRICACIÓN - {nombre_torta}")
-print("==========================================")
-
-for ing, costo in costos_usd.items():
-    print(f"{ing}: ${costo:.2f}")
-
-print("------------------------------------------")
-print(f"Costo total (incluyendo gastos variables) en USD: ${costo_total_usd:.2f}")
-print(f"Costo total en Bs (BCV): Bs {costo_total_bcv:.2f}")
-print(f"Costo total en Bs (Calle): Bs {costo_total_calle:.2f}")
-
-print("\n******** PRECIO SUGERIDO DE VENTA ********")
-print(f"Precio sugerido de venta en USD: ${precio_sugerido_usd:.2f}")
-print(f"Precio sugerido de venta en Bs (BCV): Bs {precio_sugerido_bcv:.2f}")
-print(f"Precio sugerido de venta en Bs (Calle): Bs {precio_sugerido_calle:.2f}")
-print("==========================================")
